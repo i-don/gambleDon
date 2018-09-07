@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>gambleDon</title>
+    <link <rel='icon' href='favicon.ico'/>
+    <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600' rel='stylesheet' type='text/css'>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.2/normalize.min.css'>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css'>
+    <script src='https://code.jquery.com/jquery-2.1.4.min.js'></script>
+    <script src='vendor.js'></script>
+    <script src='lib/aws-cognito-sdk.min.js'></script>
+    <script src='lib/amazon-cognito-identity.min.js'></script>
+    <script src='app.js'></script>
+    <style type="text/css" media="all">
+      html {
+        font-family: 
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Apple Color Emoji",
+          "Noto Color Emoji",
+          "Noto Emoji",
+          sans-serif;
+      }
+      body { margin-top: 30px; }
+      .templates { display: none; }
+      .nav-container {
+        padding-left: 40px;
+        background: #666;
+      }
+      .nav-container a { color: white; }
+      .no-select {
+        user-select: none;
+        --webkit-user-select: none;
+        -ms-user-select: none;
+        -moz-user-select: none;
+      }
+      .fixed-top {
+        position: fixed;
+        top: 0px;
+        z-index: 1024;
+      }
+      .inline-list {
+        margin-bottom: 0px;
+      }
+      .inline-list li {
+        display: inline;
+        margin: 0 20px 0 0;
+      }
+      .recentDataItem td{
+        padding: 0 10px 0 0;
+      }
+      .recentNum {
+        text-align:right;
+      }
+      .recentDataItemTemplate { display: none; }
+      .hover-links a { text-decoration: none; }
+      .hover-links a:hover { text-decoration: underline; }
+    </style>
+    <style type="text/css" media="(max-width: 400px)">
+      .nav-container {
+        padding-left: 5px;
+      }
+      .inline-list li {
+        margin: 0 10px 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class='markup'>
+      <div class='nav-container no-select fixed-top u-full-width'>
+        <ul class='inline-list hover-links nav-list four columns'>
+          <li><a class='text-lg' href='#'>gambleDon</a></li>
+          <li class='signin-link-li'><a href='#signin'>SignIn</a></li>
+          <li class='profile-link-li'><a class='profile-link'href='#profile'></a></li>
+        </ul>
+      </div>
+      <div class='view-container container'>
+      </div>
+      <div class='templates'>
+        <div class='landing-view'>
+          <div class='row'>
+            <div class='one-half column'>
+              <h3>gambleDon</h3>
+              <div class='anonymous'>
+                <a href='#signin' class='button button-primary'>SignIn</a>
+              </div>
+              <div class='signed'>
+                <a href='#entrySP' class='button button-primary'>entry SP</a>
+                <table>
+                  <tr class='recentDataItemTemplate recentDataItem'>
+                    <td class='datetime'></td>
+                    <td class='bet recentNum'></td>
+                    <td class='refund recentNum'></td>
+                    <td class='emoticon recentNum'></td>
+                  </tr>
+                  <div class='recent'></div>
+                </table>
+              </div>
+            </div>
+            <img src='images/gamble_chuudoku_izonsyou.png'class='u-max-full-width'/>
+          </div>
+        </div>
+        <div class='signin-view'>
+          <h3>SignIn</h3>
+          <p class='message'></p>
+          <form>
+            <div class='enter-cognito-signin'>
+              <div>
+                <input type='text' class='form-control username' placeholder='username'></input>
+              </div>
+              <div>
+                <input type='password' class='form-control password' placeholder='password' ></input>
+              </div>
+              <div>
+                <button class='button-primary cognito-signin-btn'>Sign in with cognito</button>
+              </div>
+            </div>
+            <div class='enter-new-cognito-password'>
+              <div>
+                <input type='password' class='form-control new-password' placeholder='new password' ></input>
+              </div>
+              <div>
+                <button class='button-primary set-cognito-password-btn'>Set Password</button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class='profile-view'>
+          <h3>Your Profile</h3>
+          <p class='message'></p>
+          <div class='profile-detail'>
+            <dl>
+              <dt>username</dt>
+              <dd class='username'></dd>
+              <dt>id</dt>
+              <dd class='id'></dd>
+            </dl>
+            <div>
+              <button class='button-primary signout-btn'>Sign Out</button>
+            </div>
+          </div>
+        </div>
+        <div class='entrySP-view'>
+          <h3>Entry SP</h3>
+          <form>
+            <label>date time</label>
+            <input class='datetime' type='datetime-local'></input>
+            <label>bet</label>
+            <select class='betK'></select>
+            <select class='bet'></select>
+            <label>refund</label>
+            <select class='refundK'></select>
+            <select class='refund'></select>
+            <div>
+              <button class='button-primary entry-btn'>entry</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script type='text/javascript'>
+      $(window).ready(gambleDon.appOnReady)
+    </script>
+  </body>
+</html>

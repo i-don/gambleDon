@@ -1,0 +1,26 @@
+{
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "userId", 
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "datetime", 
+      "AttributeType": "S"
+    }
+  ], 
+  "KeySchema": [
+    {
+      "KeyType": "HASH", 
+      "AttributeName": "userId"
+    }, 
+    {
+      "KeyType": "RANGE", 
+      "AttributeName": "datetime"
+    }
+  ], 
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 5, 
+    "WriteCapacityUnits": 5 
+  } 
+}
