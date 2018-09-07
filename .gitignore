@@ -1,3 +1,4 @@
 conf/dynamodb/tables/gambleDonSP/role_policy.json
 conf/dynamodb/tables/gambleDonSP/role_policy_condition.json
 conf/dynamodb/tables/gambleDonSP/table_info.json
+conf/s3/gambledon.i-don.com/endpoint.txt

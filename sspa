@@ -2,7 +2,7 @@
 
 abspath="$(cd "${0%/*}" 2>/dev/null; echo "$PWD"/"${0##*/}")"
 root_dir=`dirname "$abspath"`
-app_name=learnjs
+app_name=gambleDon
 code_bucket=${app_name}/_code_bundles
 profile=admin
 
@@ -52,7 +52,7 @@ function create_s3_bucket() {
   local bucket_path=conf/s3/${bucket_name}
   # The s3 command doesn't output JSON :-/
   if [[ ! -e ${bucket_path}/endpoint.txt ]]; then
-    aws --profile $profile s3 mb $bucket_uri && mkdir -p ${bucket_path}
+    aws --profile $profile s3 mb ${bucket_uri} && mkdir -p ${bucket_path}
     local region=$(aws --profile $profile configure get region)
     local endpoint="http://${1}.s3-website-${region}.amazonaws.com"
     echo "$endpoint" > ${bucket_path}/endpoint.txt
