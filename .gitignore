@@ -2,3 +2,10 @@ conf/dynamodb/tables/gambleDonSP/role_policy.json
 conf/dynamodb/tables/gambleDonSP/role_policy_condition.json
 conf/dynamodb/tables/gambleDonSP/table_info.json
 conf/s3/gambledon.i-don.com/endpoint.txt
+services/node_modules/
+services/archive.zip
+services/package-lock.json
+conf/lambda/functions/saveSP/info.json
+conf/iam/roles/gambleDon_lambda_exec/info.json
+conf/dynamodb/tables/gambleDonSP/role_policy_read.json
+conf/dynamodb/tables/gambleDonSP/role_policy_full.json

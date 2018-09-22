@@ -217,7 +217,7 @@ gambleDon.myDateFmt = function(dstr) {
 }
 
 /*****************************************************************************
- LOGIC
+ AUTHENTICATION
 ******************************************************************************/
 gambleDon.Signout = function() {
   if(gambleDon.UserPool.getCurrentUser()) {
@@ -352,26 +352,53 @@ gambleDon.template = function(name) {
 }
 
 /*****************************************************************************
- DB ACCESS
+ SERVICE ACCESS
 ******************************************************************************/
 gambleDon.saveSP = function(datetime, bet, refund) {
-  return gambleDon.refresh().then(function(identity) {
-    var db = new AWS.DynamoDB.DocumentClient({region: gambleDon.region});
-    var item = {
-      TableName: 'gambleDonSP',
-      Item: {
-        userId: identity.identityId,
+  return gambleDon.refresh().then(function() {
+    var lambda = new AWS.Lambda();
+    var params = {
+      FunctionName: 'saveSP',
+      Payload: JSON.stringify({
         datetime: datetime,
         bet: bet,
         refund: refund
-      }
+      })
     };
-    return gambleDon.sendDbRequest(db.put(item), function() {
+    return gambleDon.sendAwsRequest(lambda.invoke(params), function() {
       return gambleDon.saveSP(datetime, bet, refund);
     });
   });
 }
 
+gambleDon.sendAwsRequest = function(req, retry) {
+  var deferred = new $.Deferred();
+  req.on('error', function(error) {
+    if(error.code === "CredentialsError") {
+      gambleDon.refresh(true).then(
+        function(credentials) {
+          return retry();
+        },
+        function(errorRef) {
+          console.log(errorRef);
+          deferred.reject(errorRef);
+        }
+      );
+    } else {
+      console.log(error);
+      deferred.reject(error);
+    }
+  });
+  req.on('success', function(resp) {
+    deferred.resolve(resp.data);
+  });
+  req.send();
+  return deferred.promise();
+}
+
+/*****************************************************************************
+ DB ACCESS
+******************************************************************************/
 gambleDon.fetchRecentSP = function(datetimeFrom) {
   return gambleDon.refresh().then(function(identity) {
     var db = new AWS.DynamoDB.DocumentClient({region: gambleDon.region});

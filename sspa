@@ -105,7 +105,7 @@ cat <<DOC
 DOC
 }
 
-function generate_table_policy() {
+function generate_table_policy_full() {
   local table_arn=$1
 cat <<DOC
 {
@@ -121,30 +121,29 @@ cat <<DOC
         "dynamodb:Query",
         "dynamodb:UpdateItem"
       ],
-      "Resource": ["${table_arn}"],
-      "Condition": {
-        "ForAllValues:StringEquals": {
-          "dynamodb:LeadingKeys": ["\${cognito-identity.amazonaws.com:sub}"]}
-    }
+      "Resource": ["${table_arn}"]
   }]
 }
 DOC
 }
 
-function generate_table_policy_condition() {
+function generate_table_policy_read() {
   local table_arn=$1
 cat <<DOC
 {
   "Version": "2012-10-17",
   "Statement": [{
       "Effect": "Allow",
-      "Action": ["dynamodb:Scan"],
+      "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:GetItem",
+        "dynamodb:Query"
+      ],
       "Resource": ["${table_arn}"],
       "Condition": {
         "ForAllValues:StringEquals": {
-          "dynamodb:Select": ["COUNT"]
-        }
-      }
+          "dynamodb:LeadingKeys": ["\${cognito-identity.amazonaws.com:sub}"]}
+    }
   }]
 }
 DOC
@@ -165,7 +164,6 @@ function create_cognito_auth_role() {
       > ${identity_pool_dir}/role_info.json
   fi
 }
-
 
 function create_identity_pool() {
   local identity_pool_dir=${1%/}
@@ -195,7 +193,6 @@ function create_identity_pool() {
 function create_table() {
   local table_dir=${1%/}
   local table_name=$(basename $table_dir)
-  local role_name="${2}"
   if [[ ! -s ${table_dir}/table_info.json ]]; then
     aws --profile $profile dynamodb create-table \
       --table-name $table_name \
@@ -212,16 +209,8 @@ function create_table() {
   fi
 
   local table_arn=$(support/jsed.py ${table_dir}/table_info.json 'Table.TableArn')
-  generate_table_policy ${table_arn} > ${table_dir}/role_policy.json
-  aws --profile $profile iam put-role-policy \
-    --policy-document file://${table_dir}/role_policy.json \
-    --role-name ${role_name} \
-    --policy-name ${table_name}_table_access
-  generate_table_policy_condition ${table_arn} > ${table_dir}/role_policy_condition.json
-  aws --profile $profile iam put-role-policy \
-    --policy-document file://${table_dir}/role_policy_condition.json \
-    --role-name ${role_name} \
-    --policy-name ${table_name}_table_access_condition
+  generate_table_policy_full ${table_arn} > ${table_dir}/role_policy_full.json
+  generate_table_policy_read ${table_arn} > ${table_dir}/role_policy_read.json
 }
 
 function build_bundle() {
@@ -273,6 +262,16 @@ function create_iam_role() {
   fi
 }
 
+function grant_full() {
+  local role_name="${app_name}_lambda_exec"
+  for fn in `ls conf/dynamodb/tables`; do
+      aws --profile $profile iam put-role-policy \
+        --policy-document file://conf/dynamodb/tables/${fn}/role_policy_full.json \
+        --role-name ${role_name} \
+        --policy-name ${fn}_table_access
+  done
+}
+
 function create_lambda_service() {
   local service_dir=${1%/}
   local function_name=$(basename $service_dir)
@@ -283,6 +282,7 @@ function create_lambda_service() {
     echo -n .
   done
   sleep 5 # See issue #17
+  grant_full
   echo "...done!"
   if [[ ! -e ${service_dir}/info.json ]]; then
     aws --profile $profile lambda create-function \
@@ -293,6 +293,16 @@ function create_lambda_service() {
       --cli-input-json "file://${service_dir}/config.json" \
       > ${service_dir}/info.json
   fi
+}
+
+function grant_read() {
+  local role_name=$1
+  for fn in `ls conf/dynamodb/tables`; do
+      aws --profile $profile iam put-role-policy \
+        --policy-document file://conf/dynamodb/tables/${fn}/role_policy_read.json \
+        --role-name ${role_name} \
+        --policy-name ${fn}_table_read_access
+  done
 }
 
 function help() {
@@ -308,7 +318,9 @@ function help() {
   echo "    create_bucket <bucket name>"
   echo "    deploy_bucket <bucket name>"
   echo "    create_pool <config dir>"
-  echo "    create_table <config dir> <pool name>"
+  echo "    create_table <config dir>"
+  echo "    grant_full"
+  echo "    grant_read <role_name>"
   echo "    test"
   echo "    build_bundle"
   echo "    deploy_bundle"
@@ -379,12 +391,17 @@ case "$action" in
 
   create_table)
     check_aws
-    if [[ $# -eq 3 ]]; then
-      create_table ${2} ${3}
+    if [[ $# -eq 2 ]]; then
+      create_table ${2}
     else
-      echo "Please specify a DynamoDB table configuration directory and identity pool name" 
+      echo "Please specify a DynamoDB table configuration directory" 
       exit 1
     fi
+    ;;
+
+  grant_full)
+    check_aws
+    grant_full
     ;;
 
   create_service)
@@ -394,6 +411,15 @@ case "$action" in
       create_lambda_service ${2}
     else
       echo "Please specify a Lambda config directory" 
+      exit 1
+    fi
+    ;;
+
+  grant_read)
+    if [[ $# -eq 2 ]]; then
+      grant_read ${2}
+    else
+      echo "Please specify a role name" 
       exit 1
     fi
     ;;
