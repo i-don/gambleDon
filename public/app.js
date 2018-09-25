@@ -23,7 +23,7 @@ gambleDon.landingView = function() {
     if(identity){
       view.find('.signed').css('display','');
       let d = new Date(Date.now() - 1000 * 60 * 60 * 24 * 2);	// from two days ago
-      gambleDon.fetchRecentSP(gambleDon.localDateFmt(d)).then(function(data) {
+      gambleDon.fetchRecentSP(gambleDon.localDateFmt(d), gambleDon.MaxDate).then(function(data) {
         if(data.Items) {
           let dataItemTemplate = $('.templates .recentDataItemTemplate').clone();
           $('.recent').empty();
@@ -155,7 +155,7 @@ gambleDon.profileView = function() {
   return view;
 }
 
-gambleDon.entrySP = function() {
+gambleDon.entrySPView = function() {
 
   function setElement(ele, val) {
     let option = $('<option>')
@@ -199,9 +199,107 @@ gambleDon.entrySP = function() {
   return view;
 }
 
+gambleDon.slumpSPView = function(mstr) {
+  let view = gambleDon.template('slumpSP-view');
+  gambleDon.slumpSPMonth = null;
+
+  let dBase = gambleDon.parseMonth(mstr);
+  if(dBase == null) {
+    dBase = new Date(Date.now());
+  }
+
+  view.find('.month').text(dBase.getFullYear() + '/' + (dBase.getMonth() + 1));
+  view.find('.prev-link').attr('href', '#slumpSP-' + ('0000' + dBase.getFullYear()).slice(-4) + ('00' + dBase.getMonth()).slice(-2));
+  view.find('.next-link').attr('href', '#slumpSP-' + ('0000' + dBase.getFullYear()).slice(-4) + ('00' + (dBase.getMonth() + 2)).slice(-2));
+
+  gambleDon.slumpSPMonth = dBase;
+  return view;
+}
+
+gambleDon.slumpSPMonth = null;
+
+gambleDon.slumpSPViewShow = function(view) {
+
+  function showChart(data) {
+    let chartLabels = [];
+    let chartData = [];
+    let balance = 0;
+    let dFrom = new Date(gambleDon.slumpSPMonth.getFullYear(), gambleDon.slumpSPMonth.getMonth(), 1, 0, 0);
+    data.Items.forEach(function(row) {
+      balance = balance - row.bet + row.refund;
+      chartLabels.push(row.datetime);
+      chartData.push({
+        x: (gambleDon.parseDateTime(row.datetime) - dFrom) / (1000 * 60 * 60 * 24) + 1,
+        y: balance
+      });
+    })
+
+    let chart = new Chart(view.find('.stage'), {
+      type: 'line', 
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          label: 'Monthly balance',
+          data: chartData,
+          borderColor: '#FF6384',
+          backgroundColor: '#FF6384',
+          fill: false,
+          steppedLine: 'before',
+        }]
+      },
+      options: {
+        scales: {
+          xAxes: [{
+            type: 'linear',
+            position: 'bottom',
+            ticks: {
+                min: 1,
+            }
+          }],
+        },
+        tooltips: {
+          callbacks: {
+            title: function(tooltipItems, data) {
+              return data.labels[tooltipItems[0].index];
+            },
+            label: function(tooltipItems, data) {
+              return tooltipItems.yLabel;
+            }
+          }
+        }
+      }
+    });
+  }
+
+  if(gambleDon.slumpSPMonth == null) {
+    view.find('.message').text('Month is not specified');
+    return;
+  }
+  gambleDon.identity.progress(function(identity) {
+    if(identity){
+      let dFrom = new Date(gambleDon.slumpSPMonth.getFullYear(), gambleDon.slumpSPMonth.getMonth(), 1, 0, 0);
+      let dTo = new Date(new Date(dFrom.getFullYear(), dFrom.getMonth() + 1, 1, 0, 0) - 1000);
+      gambleDon.fetchRecentSP(gambleDon.localDateFmt(dFrom), gambleDon.localDateFmt(dTo)).then(function(data) {
+        if(data.Items && data.Items.length > 0) {
+          showChart(data);
+        } else {
+          view.find('.message').text('No Data');
+        }
+      }, function() {
+        view.find('.message').text('Data fetch failed');
+      });
+    } else {
+      view.find('.message').text('No SignIn');
+    }
+  });
+}
+
 /*****************************************************************************
  UTIL
 ******************************************************************************/
+
+gambleDon.MaxDate = '9999-12-31T23:59';
+
 gambleDon.localDateFmt = function(d) {
   return d.getFullYear()
     + '-' + ('0' + (d.getMonth() + 1)).slice(-2)
@@ -210,11 +308,38 @@ gambleDon.localDateFmt = function(d) {
     + ':' + ('0' + d.getMinutes()).slice(-2);
 }
 
+gambleDon.parseMonth = function(mstr) {
+  if(mstr == null) {
+    return null;
+  }
+  if(mstr.match(/^[0-9]{6}$/) == null) {
+    return null;
+  }
+  return new Date(parseInt(mstr.substr(0, 4)), parseInt(mstr.substr(4, 2)) - 1, 1, 0, 0);
+}
+
+gambleDon.parseDateTime = function(dstr) {
+  if(dstr == null) {
+    return null;
+  }
+  if(dstr.match(/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$/) == null) {
+    return null;
+  }
+  return new Date(
+    parseInt(dstr.substr(0, 4)),
+    parseInt(dstr.substr(5, 2)) - 1,
+    parseInt(dstr.substr(8, 2)),
+    parseInt(dstr.substr(11, 2)),
+    parseInt(dstr.substr(14, 2))
+  );
+}
+
 gambleDon.myDateFmt = function(dstr) {
   return    dstr.substr(5,2)
     + '/' + dstr.substr(8,2)
     + ' ' + dstr.substr(11,5);
 }
+
 
 /*****************************************************************************
  AUTHENTICATION
@@ -311,27 +436,37 @@ gambleDon.showView = function(hash) {
   var routes = {
     '#signin':gambleDon.signinView,
     '#profile':gambleDon.profileView,
-    '#entrySP':gambleDon.entrySP,
+    '#entrySP':gambleDon.entrySPView,
+    '#slumpSP':gambleDon.slumpSPView,
     '#':gambleDon.landingView,
     '':gambleDon.landingView
   };
+  var routesShow = {
+    '#slumpSP':gambleDon.slumpSPViewShow
+  };
+
   var hashParts = hash.split('-');
   var viewFn = routes[hashParts[0]];
-  if (viewFn) {
+  if(viewFn) {
     gambleDon.triggerEvent('removingView', [])
-    $('.view-container').empty().append(viewFn(hashParts[1]));
+    var view = viewFn(hashParts[1]);
+    $('.view-container').empty().append(view);
+    var viewShowFn = routesShow[hashParts[0]];
+    if(viewShowFn) {
+      viewShowFn(view);
+    }
   }
 }
 
 gambleDon.appOnReady = function(hash) {
   gambleDon.identity.progress(function(identity) {
     if(identity){
-      $('.nav-list').find('.signin-link-li').css('display','none');
-      $('.nav-list').find('.profile-link-li').css('display','');
+      $('.nav-list').find('.unauth').css('display','none');
+      $('.nav-list').find('.auth').css('display','');
       $('.nav-list').find('.profile-link').text(identity.params.UserName);
     } else {
-      $('.nav-list').find('.signin-link-li').css('display','');
-      $('.nav-list').find('.profile-link-li').css('display','none');
+      $('.nav-list').find('.unauth').css('display','');
+      $('.nav-list').find('.auth').css('display','none');
     }
   });
 
@@ -399,23 +534,24 @@ gambleDon.sendAwsRequest = function(req, retry) {
 /*****************************************************************************
  DB ACCESS
 ******************************************************************************/
-gambleDon.fetchRecentSP = function(datetimeFrom) {
+gambleDon.fetchRecentSP = function(datetimeFrom, datetimeTo) {
   return gambleDon.refresh().then(function(identity) {
     var db = new AWS.DynamoDB.DocumentClient({region: gambleDon.region});
     var item = {
       TableName: 'gambleDonSP',
-      KeyConditionExpression: '#u = :userId and #d >= :datetimeFrom',
+      KeyConditionExpression: '#u = :userId and #d BETWEEN :datetimeFrom and :datetimeTo',
       ExpressionAttributeNames:{
         '#u': 'userId',
         '#d': 'datetime'
       },
       ExpressionAttributeValues: {
         ':userId': identity.identityId,
-        ':datetimeFrom': datetimeFrom
+        ':datetimeFrom': datetimeFrom,
+        ':datetimeTo': datetimeTo
       }
     };
     return gambleDon.sendDbRequest(db.query(item), function() {
-      return gambleDon.fetchRecentSP(datetimeFrom);
+      return gambleDon.fetchRecentSP(datetimeFrom, datetimeTo);
     });
   });
 }

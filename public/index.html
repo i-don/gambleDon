@@ -12,6 +12,7 @@
     <script src='vendor.js'></script>
     <script src='lib/aws-cognito-sdk.min.js'></script>
     <script src='lib/amazon-cognito-identity.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.min.js'></script>
     <script src='app.js'></script>
     <style type="text/css" media="all">
       html {
@@ -72,8 +73,9 @@
       <div class='nav-container no-select fixed-top u-full-width'>
         <ul class='inline-list hover-links nav-list four columns'>
           <li><a class='text-lg' href='#'>gambleDon</a></li>
-          <li class='signin-link-li'><a href='#signin'>SignIn</a></li>
-          <li class='profile-link-li'><a class='profile-link'href='#profile'></a></li>
+          <li class='signin-link-li unauth'><a href='#signin'>SignIn</a></li>
+          <li class='profile-link-li auth'><a class='profile-link'href='#profile'></a></li>
+          <li class='slumpSP-link-li auth'><a href='#slumpSP'>SlumpSP</a></li>
         </ul>
       </div>
       <div class='view-container container'>
@@ -157,6 +159,12 @@
               <button class='button-primary entry-btn'>entry</button>
             </div>
           </form>
+        </div>
+        <div class='slumpSP-view'>
+          <h3>Slump SP</h3>
+          <ul class='inline-list'><li><a class='prev-link'>&lt;</a></li><li class='month'></li><li><a class='next-link'>&gt;</a></li></ul>
+          <p class='message'></p>
+          <canvas class='stage'></canvas>
         </div>
       </div>
     </div>

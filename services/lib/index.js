@@ -14,10 +14,6 @@ exports.saveSP = function(event, context) {
     context.fail('identity is null');
     return;
   }
-  if(context.identity.cognitoIdentityId == undefined) {
-    context.fail('cognitoIdentityId is undefined');
-    return;
-  }
   if(context.identity.cognitoIdentityId == null) {
     context.fail('cognitoIdentityId is null');
     return;
