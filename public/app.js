@@ -233,6 +233,7 @@ gambleDon.slumpSPViewShow = function(view) {
         y: balance
       });
     })
+    let lastDay = (new Date(gambleDon.slumpSPMonth.getFullYear(), gambleDon.slumpSPMonth.getMonth() + 1, 0, 0, 0)).getDate();
 
     let chart = new Chart(view.find('.stage'), {
       type: 'line', 
@@ -253,7 +254,14 @@ gambleDon.slumpSPViewShow = function(view) {
             type: 'linear',
             position: 'bottom',
             ticks: {
-                min: 1,
+              min: 1,
+              max: lastDay + 1,
+              callback: function(value, index, values) {
+                if(value > lastDay) {
+                  return '';
+                }
+                return value;
+              }
             }
           }],
         },
