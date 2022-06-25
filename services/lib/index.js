@@ -1,13 +1,19 @@
-var AWS = require('aws-sdk');
+const { DynamoDBClient, PutItemCommand  } = require('@aws-sdk/client-dynamodb');
 
-var config = {
+const config = {
   region: 'ap-northeast-1',
-  dynamoTableName: 'gambleDon',
 };
 
-AWS.config.region = config.region;
+exports.dynamodb = new DynamoDBClient({ region: config.region });
 
-exports.dynamodb = new AWS.DynamoDB.DocumentClient();
+exports.putitem = async function(item) {
+  try {
+    const data = await exports.dynamodb.send(new PutItemCommand(item));
+    return data;
+  } catch(err) {
+    throw err;
+  }
+};
 
 exports.saveSP = function(event, context) {
   if(context.identity == null) {
@@ -18,20 +24,20 @@ exports.saveSP = function(event, context) {
     context.fail('cognitoIdentityId is null');
     return;
   }
-  var item = {
+  const item = {
     TableName: 'gambleDonSP',
     Item: {
-      userId: context.identity.cognitoIdentityId,
-      datetime: event.datetime,
-      bet: event.bet,
-      refund: event.refund
+      userId: {S: context.identity.cognitoIdentityId},
+      datetime: {S: event.datetime},
+      bet: {N: String(event.bet)},
+      refund: {N: String(event.refund)}
     }
   };
-  exports.dynamodb.put(item, function(err, data) {
-    if(err) {
-      context.fail(err);
-    } else {
+  exports.putitem(item)
+    .then((data) => {
       context.succeed(data);
-    }
-  });
+    })
+    .catch((err) => {
+      context.fail(err);
+    });
 };

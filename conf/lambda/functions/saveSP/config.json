@@ -1,5 +1,5 @@
 {
-    "Runtime": "nodejs8.10", 
+    "Runtime": "nodejs16.x", 
     "Timeout": 5, 
     "MemorySize": 128, 
     "Publish": true
