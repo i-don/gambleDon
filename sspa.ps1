@@ -8,4 +8,5 @@ function check_python {
 	    exit 1
 	}
 }
+echo develop
 check_python
